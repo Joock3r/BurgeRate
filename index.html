@@ -405,10 +405,10 @@
 // =========================================
 // 1. העתק את כתובת ה-CSV של Google Sheets שלך לכאן:
 //    (File → Share → Publish to web → CSV → Copy link)
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQgxs_oK4ytYiflovhXKbfdoJxG0lCQLoKnigJy-hQYg8nfzmhF3gFF0zkXqiYRBTlvubcdS12WxZ-/pub?gid=1516836364&single=true&output=csv';
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQgxs_oK4ytYiflovhXKbfdoJxG0lCQLoKnigJy-hQYg8nfzmhF3gFF0zkXqiYRBTlvubcdS12WxZ-/pub?gid=1802662804&single=true&output=csv';
 
 // 3. הכנס כאן את קישור ה-Google Form (לכפתור ה-＋):
-const GOOGLE_FORM_URL = ''; // ← הכנס את קישור ה-Form כאן
+const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdPK9qCVZewhlod1n3NW8XjaXd1NLARHGCQTDF4iQlqx2E1QQ/viewform?usp=header'; // ← הכנס את קישור ה-Form כאן
 
 // 2. סדר העמודות בגיליון (כפי שמגיע מ-Google Form):
 //    Timestamp | שם המסעדה | עיר | קישור מפות | URL לוגו | URL תמונת מנה |
@@ -682,7 +682,7 @@ function openViewModal(id){
     {title:'💰 תמורה למחיר',weight:'10%',items:[{l:'גודל מנה',v:rt.size},{l:'מחיר/איכות',v:rt.value_price},{l:'חזרה?',v:rt.return_visit}]},
   ];
   const heroHtml=r.imgUrl?`<img src="${r.imgUrl}" alt="" onerror="this.outerHTML='<div class=modal-hero-placeholder>🍔</div>'">`:
-    `<div class="modal-hero-placeholder">🍔</div>`;
+    `<div class="modal-hero-placeholder" title="להוספת תמונה: הוסף עמודת imgUrl בגיליון (col H אחרי mapUrl)">🍔</div>`;
   const logoHtml=r.logoUrl?`<img src="${r.logoUrl}" alt="" onerror="this.outerHTML='🏪'">`: '🏪';
   document.getElementById('viewContent').innerHTML=`
     <div class="modal-hero">${heroHtml}<div class="modal-logo-wrap">${logoHtml}</div></div>
@@ -774,31 +774,71 @@ function parseCSV(text){
 }
 
 function rowToRestaurant(c,idx){
-  // Google Form prepends: col0=Timestamp, col1=Email — skip both (offset=2)
-  // If somehow there is no timestamp, fall back gracefully by detecting the first
-  // column: if it looks like a date/time string it is the timestamp, else offset=0.
-  let o = 2; // default: Timestamp + Email columns present
+  /*
+    Expected Google Form column order (after Timestamp + Email):
+    [o+0]  שם המסעדה       → name
+    [o+1]  עיר              → city
+    [o+2]  תאריך ביקור      → date  (Google Form saves as DD/MM/YYYY HH:MM:SS)
+    [o+3]  משפט מחץ         → tagline
+    [o+4]  URL לוגו         → logoUrl  (added manually in sheet)
+    [o+5]  URL תמונת מנה   → imgUrl   (added manually in sheet)
+    [o+6]  קישור מפות       → mapUrl   (added manually in sheet)
+    [o+7]  איכות הבשר       → meat_quality
+    [o+8]  מידת עשייה       → doneness
+    [o+9]  יחס שומן         → fat
+    [o+10] חריכה             → sear
+    [o+11] לחמנייה           → bun
+    [o+12] יחס קציצה         → ratio
+    [o+13] יציבות            → stability
+    [o+14] איזון טעמים       → balance
+    [o+15] צ׳יפס             → fries
+    [o+16] ירקות             → veggies
+    [o+17] רטבים             → sauces
+    [o+18] גיוון             → variety
+    [o+19] שירות             → service
+    [o+20] ניקיון            → clean
+    [o+21] אווירה            → vibe
+    [o+22] מהירות            → speed
+    [o+23] גודל מנה          → size
+    [o+24] מחיר מול איכות   → value_price
+    [o+25] האם היית חוזר    → return_visit
+
+    NOTE: logoUrl / imgUrl / mapUrl are NOT in the Form — add them as manual
+    columns in the Google Sheet directly (right-click → Insert column).
+  */
+  let o = 2; // Timestamp(0) + Email(1) = skip 2
   const firstCell = (c[0]||'').trim();
-  const looksLikeDate = /^\d{1,4}[\/\-\s]/.test(firstCell);
+  const looksLikeDate = /^\d{1,2}[\/\-]/.test(firstCell) || /^\d{4}-\d{2}/.test(firstCell);
   if (!looksLikeDate) {
-    // No timestamp column — maybe sheet was edited manually; use offset 0
-    o = 0;
-  } else if ((c[1]||'').includes('@') || (c[1]||'') === '') {
-    // col1 is email (or empty email slot) → offset 2
-    o = 2;
+    o = 0; // No auto-columns (manual entry)
+  } else if ((c[1]||'').includes('@') || (c[1]||'').trim() === '') {
+    o = 2; // Timestamp + Email
   } else {
-    // Timestamp present but no email column → offset 1
-    o = 1;
+    o = 1; // Timestamp only
   }
-  return{
-    id:((c[o+0]||'').replace(/\s/g,'_').replace(/[^a-zA-Z\u0590-\u05fe0-9_]/g,''))+'_'+idx,
+
+  // Parse date: handles DD/MM/YYYY HH:MM:SS  OR  YYYY-MM-DD  OR  DD/MM/YYYY
+  function parseDate(raw) {
+    if (!raw) return '';
+    raw = raw.trim();
+    // DD/MM/YYYY ... (Google Form format)
+    const m1 = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m1) return m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
+    // YYYY-MM-DD already fine
+    const m2 = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m2) return raw.slice(0,10);
+    return raw.slice(0,10);
+  }
+
+  return {
+    id: ((c[o+0]||'').replace(/\s/g,'_').replace(/[^a-zA-Z\u0590-\u05fe0-9_]/g,''))+'_'+idx,
     name:    c[o+0]||'',
     city:    c[o+1]||'',
-    mapUrl:  c[o+2]||'',
-    logoUrl: c[o+3]||'',
-    imgUrl:  c[o+4]||'',
-    date:    c[o+5]||'',
-    tagline: c[o+6]||'',
+    date:    parseDate(c[o+2]||''),
+    tagline: c[o+3]||'',
+    logoUrl: c[o+4]||'',
+    imgUrl:  c[o+5]||'',
+    mapUrl:  c[o+6]||'',
     ratings:{
       meat_quality: parseFloat(c[o+7])||0,  doneness:     parseFloat(c[o+8])||0,
       fat:          parseFloat(c[o+9])||0,  sear:         parseFloat(c[o+10])||0,
@@ -900,6 +940,8 @@ async function loadFromSheets(){
     if(all.length<2) throw new Error('אין שורות נתונים בגיליון');
     const loaded=all.slice(1).map((c,i)=>rowToRestaurant(c,i)).filter(r=>r.name.length>0);
     if(!loaded.length) throw new Error('לא נמצאו שורות תקינות');
+    // Debug: log first restaurant to console so column mapping can be verified
+    if(loaded[0]) console.log('BurgeRate ✅ First row parsed:', loaded[0]);
     restaurants=loaded;
     save();
     updateLastRefresh();
