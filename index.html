@@ -821,24 +821,59 @@ function rowToRestaurant(c,idx){
   function parseDate(raw) {
     if (!raw) return '';
     raw = raw.trim();
-    // DD/MM/YYYY ... (Google Form format)
+    // DD/MM/YYYY HH:MM:SS  (Google Form timestamp format)
     const m1 = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
     if (m1) return m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
+    // D.M.YYYY or DD.MM.YYYY  (dot-separated, e.g. "3.3.2026" or "1.12.2025")
+    const m3 = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+    if (m3) return m3[3]+'-'+m3[2].padStart(2,'0')+'-'+m3[1].padStart(2,'0');
     // YYYY-MM-DD already fine
     const m2 = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (m2) return raw.slice(0,10);
     return raw.slice(0,10);
   }
 
+  /*
+    ACTUAL column order from your Google Sheet (after Timestamp + Email = offset 2):
+    col C  [o+0]  שם מסעדה
+    col D  [o+1]  עיר
+    col E  [o+2]  קישור למפה    → mapUrl
+    col F  [o+3]  לוגו URL      → logoUrl
+    col G  [o+4]  תמונה URL     → imgUrl
+    col H  [o+5]  תאריך ביקור   → date
+    col I  [o+6]  משפט מחץ      → tagline
+    col J  [o+7]  איכות הבשר    → meat_quality
+    col K  [o+8]  מידת עשייה    → doneness
+    col L  [o+9]  יחס שומן      → fat
+    col M  [o+10] חריכה         → sear
+    col N  [o+11] לחמנייה       → bun
+    col O  [o+12] יחס קציצה     → ratio
+    col P  [o+13] יציבות        → stability
+    col Q  [o+14] איזון טעמים   → balance
+    col R  [o+15] צ׳יפס         → fries
+    col S  [o+16] ירקות         → veggies
+    col T  [o+17] רטבים         → sauces
+    col U  [o+18] גיוון         → variety
+    col V  [o+19] שירות         → service
+    col W  [o+20] ניקיון        → clean
+    col X  [o+21] אווירה        → vibe
+    col Y  [o+22] מהירות        → speed
+    col Z  [o+23] גודל מנה      → size
+    col AA [o+24] מחיר/איכות    → value_price
+    col AB [o+25] האם חוזר      → return_visit
+  */
+  // Strip accidental surrounding quotes from URL fields
+  const cleanUrl = s => (s||'').trim().replace(/^["']|["']$/g,'').trim();
+
   return {
     id: ((c[o+0]||'').replace(/\s/g,'_').replace(/[^a-zA-Z\u0590-\u05fe0-9_]/g,''))+'_'+idx,
-    name:    c[o+0]||'',
-    city:    c[o+1]||'',
-    date:    parseDate(c[o+2]||''),
-    tagline: c[o+3]||'',
-    logoUrl: c[o+4]||'',
-    imgUrl:  c[o+5]||'',
-    mapUrl:  c[o+6]||'',
+    name:    (c[o+0]||'').trim(),
+    city:    (c[o+1]||'').trim(),
+    mapUrl:  cleanUrl(c[o+2]),
+    logoUrl: cleanUrl(c[o+3]),
+    imgUrl:  cleanUrl(c[o+4]),
+    date:    parseDate(c[o+5]||''),
+    tagline: (c[o+6]||'').trim(),
     ratings:{
       meat_quality: parseFloat(c[o+7])||0,  doneness:     parseFloat(c[o+8])||0,
       fat:          parseFloat(c[o+9])||0,  sear:         parseFloat(c[o+10])||0,
