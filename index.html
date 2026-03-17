@@ -114,11 +114,6 @@
   .rank-badge { position:absolute; top:10px; right:10px; font-size:24px; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3)); z-index:4; line-height:1; }
   .compare-mode .rank-badge { right:40px; }
 
-  /* DELETE button on card (hover reveal) */
-  .card-delete-btn { display:none; position:absolute; bottom:10px; left:10px; width:28px; height:28px; background:rgba(255,255,255,0.92); border:1.5px solid #f0c0b0; border-radius:8px; font-size:14px; cursor:pointer; align-items:center; justify-content:center; transition:all 0.15s; z-index:5; }
-  .card:hover .card-delete-btn { display:flex; }
-  .card-delete-btn:hover { background:#ffe0d8; border-color:var(--accent); }
-
   /* ===== MODAL BASE ===== */
   .modal-overlay { position:fixed; inset:0; background:rgba(20,10,0,0.55); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity 0.25s; backdrop-filter:blur(4px); }
   .modal-overlay.open { opacity:1; pointer-events:all; }
@@ -148,8 +143,6 @@
   .modal-stars { display:flex; gap:3px; }
   .modal-stars .star { font-size:20px; }
   .modal-sections { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-  .modal-delete-btn { display:flex; align-items:center; gap:6px; font-family:'Heebo',sans-serif; font-size:13px; font-weight:700; color:#c0392b; background:#fff0ee; border:1.5px solid #f5c0b8; border-radius:8px; padding:7px 14px; cursor:pointer; transition:all 0.15s; }
-  .modal-delete-btn:hover { background:#ffe0da; border-color:var(--accent); }
   .rating-section { background:var(--surface2); border-radius:var(--radius-sm); padding:14px; border:1.5px solid var(--border); }
   .rating-section-title { font-size:13px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
   .rating-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
@@ -215,17 +208,6 @@
   .btn-primary:hover { background:#c8330f; }
   .btn-secondary { background:var(--surface2); color:var(--text-muted); border:1.5px solid var(--border); }
   .btn-secondary:hover { background:var(--border); }
-  .btn-danger { background:#fff0ee; color:#c0392b; border:1.5px solid #f5c0b8; }
-  .btn-danger:hover { background:#ffe0da; }
-
-  /* ===== CONFIRM ===== */
-  .confirm-overlay { position:fixed; inset:0; background:rgba(20,10,0,0.45); z-index:400; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.2s; backdrop-filter:blur(3px); }
-  .confirm-overlay.open { opacity:1; pointer-events:all; }
-  .confirm-box { background:var(--surface); border-radius:var(--radius); padding:28px 28px 22px; max-width:340px; width:100%; box-shadow:var(--shadow-lg); text-align:center; transform:scale(0.94); transition:transform 0.2s; }
-  .confirm-overlay.open .confirm-box { transform:scale(1); }
-  .confirm-box h3 { font-size:18px; font-weight:800; margin-bottom:10px; }
-  .confirm-box p { font-size:14px; color:var(--text-muted); margin-bottom:20px; line-height:1.5; }
-  .confirm-actions { display:flex; gap:10px; justify-content:center; }
 
   /* ===== EMPTY STATE ===== */
   .empty-state { grid-column:1/-1; text-align:center; padding:64px 24px; color:var(--text-muted); }
@@ -258,7 +240,7 @@
   </div>
   <div class="header-actions">
     <button class="compare-toggle-btn" id="compareModeBtn" onclick="toggleCompareMode()">⚖️ <span class="btn-label">השוואה</span></button>
-    <a id="addFormLink" href="#" target="_blank" class="add-btn" title="הוסף ביקורת דרך Google Form" style="text-decoration:none;font-size:20px">＋</a>
+    <a id="addFormLink" href="https://docs.google.com/forms/d/e/1FAIpQLSdPK9qCVZewhlod1n3NW8XjaXd1NLARHGCQTDF4iQlqx2E1QQ/viewform?usp=header" target="_blank" rel="noopener" class="add-btn" title="הוסף ביקורת דרך Google Form" style="text-decoration:none;font-size:20px">＋</a>
   </div>
 </header>
 
@@ -358,28 +340,16 @@
   </div>
 </div>
 
-<!-- CONFIRM DELETE -->
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-box">
-    <h3>🗑️ מחיקת מסעדה</h3>
-    <p id="confirmText"></p>
-    <div class="confirm-actions">
-      <button class="btn btn-secondary" onclick="closeConfirm()">ביטול</button>
-      <button class="btn btn-danger" id="confirmYesBtn">מחק</button>
-    </div>
-  </div>
-</div>
-
 <script>
 // =========================================
 // 🔧 הגדרות — ערוך כאן בלבד
 // =========================================
 // 1. העתק את כתובת ה-CSV של Google Sheets שלך לכאן:
 //    (File → Share → Publish to web → CSV → Copy link)
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQgxs_oK4ytYiflovhXKbfdoJxG0lCQLoKnigJy-hQYg8nfzmhF3gFF0zkXqiYRBTlvubcdS12WxZ-/pub?gid=1516836364&single=true&output=csv';   // ← הכנס את ה-URL כאן
+const SHEET_CSV_URL = '';   // ← הכנס את ה-URL כאן
 
 // 3. הכנס כאן את קישור ה-Google Form (לכפתור ה-＋):
-const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdPK9qCVZewhlod1n3NW8XjaXd1NLARHGCQTDF4iQlqx2E1QQ/viewform?usp=header'; // ← הכנס את קישור ה-Form כאן
+const GOOGLE_FORM_URL = ''; // ← הכנס את קישור ה-Form כאן
 
 // 2. סדר העמודות בגיליון (כפי שמגיע מ-Google Form):
 //    Timestamp | שם המסעדה | עיר | קישור מפות | URL לוגו | URL תמונת מנה |
@@ -397,8 +367,6 @@ let compareMode = false;
 let compareSelected = [];
 let radarInst = null;
 let compareInst = null;
-let pendingDeleteId = null;
-let pendingDeleteFromModal = false;
 
 // =========================================
 // SCORE
@@ -513,7 +481,6 @@ function renderGrid(list) {
       ${imgHtml}
       <div class="card-score-badge">${score.toFixed(1)}</div>
       ${medal}
-      <button class="card-delete-btn" onclick="confirmDelete('${r.id}',event)" title="מחק">🗑️</button>
       <div class="card-body">
         <div class="card-header-row">${logoHtml}<div><div class="card-name">${esc(r.name)}</div><div class="card-city">📍 ${esc(r.city)}</div></div></div>
         ${r.mapUrl?`<a class="card-location-link" href="${r.mapUrl}" target="_blank" onclick="event.stopPropagation()">🗺️ פתח במפות</a>`:''}
@@ -669,7 +636,6 @@ function openViewModal(id){
       <div class="modal-sections">
         ${secs.map(s=>`<div class="rating-section"><div class="rating-section-title">${s.title} <span class="section-weight">${s.weight}</span></div>${s.items.map(it=>`<div class="rating-row"><span class="rating-row-label">${it.l}</span><div class="rating-bar-wrap"><div class="rating-bar-fill" style="width:${(it.v/5)*100}%"></div></div><span class="rating-row-val">${it.v}</span></div>`).join('')}</div>`).join('')}
       </div>
-      <button class="modal-delete-btn" onclick="confirmDelete('${r.id}',null,true)">🗑️ מחק מסעדה</button>
     </div>`;
   document.getElementById('viewOverlay').classList.add('open');
   if(radarInst) radarInst.destroy();
@@ -685,28 +651,6 @@ function openViewModal(id){
 }
 function closeViewModal(e){if(e.target===document.getElementById('viewOverlay'))closeViewModalDirect();}
 function closeViewModalDirect(){document.getElementById('viewOverlay').classList.remove('open');if(radarInst){radarInst.destroy();radarInst=null;}}
-
-// =========================================
-// DELETE
-// =========================================
-function confirmDelete(id,e,fromModal=false){
-  if(e) e.stopPropagation();
-  const r=restaurants.find(x=>x.id===id); if(!r) return;
-  pendingDeleteId=id; pendingDeleteFromModal=fromModal;
-  document.getElementById('confirmText').textContent=`האם למחוק את "${r.name}"? פעולה זו אינה הפיכה.`;
-  document.getElementById('confirmYesBtn').onclick=()=>{
-    doDelete(pendingDeleteId);
-    closeConfirm();
-    if(pendingDeleteFromModal) closeViewModalDirect();
-  };
-  document.getElementById('confirmOverlay').classList.add('open');
-}
-function doDelete(id){
-  restaurants=restaurants.filter(r=>r.id!==id);
-  compareSelected=compareSelected.filter(x=>x!==id);
-  save(); updateCityOptions(); updateCompareHint(); applyFilters();
-}
-function closeConfirm(){document.getElementById('confirmOverlay').classList.remove('open');pendingDeleteId=null;}
 
 // =========================================
 // ADD / SAVE
@@ -771,9 +715,22 @@ function parseCSV(text){
 }
 
 function rowToRestaurant(c,idx){
-  // Google Form adds a Timestamp column as first column — detect and skip it
-  const hasTs=c[0]&&(/^\d{1,2}[\/\-]/.test(c[0])||/^\d{4}-\d{2}/.test(c[0]));
-  const o=hasTs?1:0;
+  // Google Form prepends: col0=Timestamp, col1=Email — skip both (offset=2)
+  // If somehow there is no timestamp, fall back gracefully by detecting the first
+  // column: if it looks like a date/time string it is the timestamp, else offset=0.
+  let o = 2; // default: Timestamp + Email columns present
+  const firstCell = (c[0]||'').trim();
+  const looksLikeDate = /^\d{1,4}[\/\-\s]/.test(firstCell);
+  if (!looksLikeDate) {
+    // No timestamp column — maybe sheet was edited manually; use offset 0
+    o = 0;
+  } else if ((c[1]||'').includes('@') || (c[1]||'') === '') {
+    // col1 is email (or empty email slot) → offset 2
+    o = 2;
+  } else {
+    // Timestamp present but no email column → offset 1
+    o = 1;
+  }
   return{
     id:((c[o+0]||'').replace(/\s/g,'_').replace(/[^a-zA-Z\u0590-\u05fe0-9_]/g,''))+'_'+idx,
     name:    c[o+0]||'',
@@ -842,17 +799,43 @@ function updateLastRefresh(){
 // =========================================
 // GOOGLE SHEETS LOAD
 // =========================================
+async function fetchCSV(rawUrl) {
+  // When running from a local file (origin=null) browsers block fetch due to CORS.
+  // We try the direct URL first; if it fails with a CORS/network error we fall back
+  // to a public CORS proxy so local testing also works.
+  const bust = (rawUrl.includes('?')?'&':'?')+'cb='+Date.now();
+  const direct = rawUrl + bust;
+
+  // Try direct fetch (works on GitHub Pages / any real server)
+  try {
+    const r = await fetch(direct, {mode:'cors'});
+    if (r.ok) return await r.text();
+    throw new Error('HTTP '+r.status);
+  } catch(e) {
+    // Only attempt proxy when running locally (null origin) or if it was a CORS error
+    const isLocal = location.protocol === 'file:' || location.origin === 'null';
+    if (!isLocal) throw e; // on a real server, surface the real error
+  }
+
+  // Fallback: corsproxy.io — free, no key needed
+  const proxy = 'https://corsproxy.io/?' + encodeURIComponent(rawUrl + bust);
+  try {
+    const r2 = await fetch(proxy);
+    if (r2.ok) return await r2.text();
+    throw new Error('proxy HTTP '+r2.status);
+  } catch(e2) {
+    throw new Error('Failed to fetch (direct + proxy): '+e2.message);
+  }
+}
+
 async function loadFromSheets(){
   if(!SHEET_CSV_URL){
     showSheetError('כתובת Google Sheets לא הוגדרה.<br><small>ערוך את <code style="background:#f5f0e8;padding:2px 6px;border-radius:4px">SHEET_CSV_URL</code> בראש קוד ה-HTML.</small>');
     return false;
   }
   showLoading();
-  const url=SHEET_CSV_URL+(SHEET_CSV_URL.includes('?')?'&':'?')+'cb='+Date.now();
   try{
-    const resp=await fetch(url);
-    if(!resp.ok) throw new Error('שגיאת HTTP '+resp.status);
-    const csv=await resp.text();
+    const csv = await fetchCSV(SHEET_CSV_URL);
     if(!csv||csv.trim().length<5) throw new Error('הגיליון ריק');
     const all=parseCSV(csv);
     if(all.length<2) throw new Error('אין שורות נתונים בגיליון');
