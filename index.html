@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BurgeRate 🍔</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --bg: #faf8f4;
+    --surface: #ffffff;
+    --surface2: #f5f0e8;
+    --border: #e8e0d0;
+    --text: #1a1208;
+    --text-muted: #7a6a50;
+    --accent: #e8401c;
+    --accent2: #f5a623;
+    --accent3: #2d9e5f;
+    --blue: #4a9fd4;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+    --radius: 18px;
+    --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Heebo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; direction: rtl; }
+
+  /* ===== HEADER ===== */
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    padding: 0 28px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .logo { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text); flex-shrink:0; }
+  .logo-icon { width:42px; height:42px; background:var(--accent); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; box-shadow:0 3px 10px rgba(232,64,28,0.35); }
+  .logo-text { font-family:'Fredoka One',cursive; font-size:26px; letter-spacing:-0.5px; }
+  .logo-text span { color:var(--accent); }
+
+  .header-search { flex:1; max-width:340px; position:relative; }
+  .header-search input { width:100%; font-family:'Heebo',sans-serif; font-size:14px; font-weight:500; color:var(--text); background:var(--surface2); border:1.5px solid var(--border); border-radius:24px; padding:9px 36px 9px 36px; outline:none; transition:border-color 0.2s,background 0.2s; direction:rtl; }
+  .header-search input:focus { border-color:var(--accent); background:var(--surface); }
+  .search-icon { position:absolute; right:13px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:15px; pointer-events:none; }
+  .clear-search { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:13px; cursor:pointer; background:none; border:none; line-height:1; display:none; }
+
+  .header-actions { display:flex; align-items:center; gap:8px; margin-right:auto; }
+  .compare-toggle-btn { height:38px; padding:0 14px; background:var(--surface2); color:var(--text-muted); border:1.5px solid var(--border); border-radius:10px; font-family:'Heebo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.18s; white-space:nowrap; }
+  .compare-toggle-btn:hover { border-color:var(--blue); color:var(--blue); }
+  .compare-toggle-btn.active { background:#e8f5ff; border-color:var(--blue); color:#1a6fa0; }
+  .add-btn { width:42px; height:42px; background:var(--accent); color:white; border:none; border-radius:12px; font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(232,64,28,0.35); transition:transform 0.15s,box-shadow 0.15s; font-weight:700; flex-shrink:0; }
+  .add-btn:hover { transform:scale(1.08); box-shadow:0 6px 18px rgba(232,64,28,0.45); }
+
+  /* ===== COMPARE HINT ===== */
+  .compare-hint { display:none; padding:8px 28px; background:#e8f5ff; border-bottom:1.5px solid #b8daf5; font-size:13px; color:#1a6fa0; font-weight:600; align-items:center; gap:10px; }
+  .compare-hint.visible { display:flex; }
+  .compare-go-btn { margin-right:auto; padding:5px 14px; background:#1a6fa0; color:white; border:none; border-radius:8px; font-family:'Heebo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:background 0.15s; }
+  .compare-go-btn:hover { background:#155a82; }
+  .compare-go-btn:disabled { background:#b0c8d8; cursor:default; }
+
+  /* ===== FILTERS ===== */
+  .filters-bar { padding:14px 28px 10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .filter-label { font-size:13px; color:var(--text-muted); font-weight:600; }
+  .filter-select { font-family:'Heebo',sans-serif; font-size:14px; font-weight:500; color:var(--text); background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:7px 12px; cursor:pointer; outline:none; transition:border-color 0.2s; }
+  .filter-select:focus { border-color:var(--accent); }
+  .filter-chips { display:flex; gap:8px; flex-wrap:wrap; }
+  .chip { padding:6px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.18s; color:var(--text-muted); }
+  .chip:hover { border-color:var(--accent); color:var(--accent); }
+  .chip.active { background:var(--accent); color:white; border-color:var(--accent); }
+  .results-count { margin-right:auto; font-size:13px; color:var(--text-muted); font-weight:500; }
+
+  /* ===== GRID ===== */
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:22px; padding:16px 28px 48px; }
+
+  /* ===== CARD ===== */
+  .card { background:var(--surface); border-radius:var(--radius); border:1.5px solid var(--border); overflow:hidden; cursor:pointer; transition:transform 0.22s cubic-bezier(.34,1.56,.64,1),box-shadow 0.22s,border-color 0.18s; box-shadow:var(--shadow); position:relative; }
+  .card:hover { transform:translateY(-5px) scale(1.01); box-shadow:var(--shadow-lg); border-color:var(--accent); }
+  .card.compare-selected { border-color:var(--blue); box-shadow:0 0 0 3px rgba(74,159,212,0.25),var(--shadow); }
+  .card.compare-selected:hover { border-color:var(--blue); }
+
+  .compare-check { display:none; position:absolute; top:10px; right:10px; z-index:5; width:26px; height:26px; border-radius:8px; border:2px solid var(--blue); background:white; align-items:center; justify-content:center; font-size:14px; transition:all 0.15s; }
+  .compare-mode .compare-check { display:flex; }
+  .card.compare-selected .compare-check { background:var(--blue); color:white; border-color:var(--blue); }
+
+  .card-img { width:100%; height:160px; object-fit:cover; display:block; background:var(--surface2); }
+  .card-img-placeholder { width:100%; height:160px; background:linear-gradient(135deg,#f5ece0,#ffe8d0); display:flex; align-items:center; justify-content:center; font-size:52px; }
+  .card-body { padding:16px; }
+  .card-header-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .card-logo { width:40px; height:40px; border-radius:10px; object-fit:contain; border:1.5px solid var(--border); background:white; flex-shrink:0; }
+  .card-logo-placeholder { width:40px; height:40px; border-radius:10px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; border:1.5px solid var(--border); }
+  .card-name { font-size:17px; font-weight:800; line-height:1.2; }
+  .card-city { font-size:12px; color:var(--text-muted); font-weight:500; }
+  .card-location-link { display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--accent3); text-decoration:none; font-weight:500; margin-top:2px; }
+  .card-location-link:hover { text-decoration:underline; }
+  .card-stars { display:flex; gap:2px; margin:8px 0 6px; }
+  .star { font-size:16px; color:#d0c8b8; }
+  .star.filled { color:var(--accent2); }
+  .star.half { color:var(--accent2); opacity:0.6; }
+  .card-score-text { font-size:13px; font-weight:700; color:var(--text-muted); }
+  .card-tagline { font-size:13px; color:var(--text-muted); font-style:italic; margin-top:8px; line-height:1.4; border-right:3px solid var(--accent); padding-right:8px; }
+  .card-date { font-size:11px; color:#b0a090; margin-top:8px; }
+
+  .card-score-badge { position:absolute; top:12px; left:12px; background:rgba(255,255,255,0.95); border-radius:10px; padding:4px 10px; font-size:14px; font-weight:800; color:var(--accent); box-shadow:0 2px 8px rgba(0,0,0,0.12); border:1.5px solid var(--accent); }
+
+  /* TOP 3 BADGES */
+  .rank-badge { position:absolute; top:10px; right:10px; font-size:24px; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3)); z-index:4; line-height:1; }
+  .compare-mode .rank-badge { right:40px; }
+
+  /* DELETE button on card (hover reveal) */
+  .card-delete-btn { display:none; position:absolute; bottom:10px; left:10px; width:28px; height:28px; background:rgba(255,255,255,0.92); border:1.5px solid #f0c0b0; border-radius:8px; font-size:14px; cursor:pointer; align-items:center; justify-content:center; transition:all 0.15s; z-index:5; }
+  .card:hover .card-delete-btn { display:flex; }
+  .card-delete-btn:hover { background:#ffe0d8; border-color:var(--accent); }
+
+  /* ===== MODAL BASE ===== */
+  .modal-overlay { position:fixed; inset:0; background:rgba(20,10,0,0.55); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity 0.25s; backdrop-filter:blur(4px); }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal { background:var(--surface); border-radius:var(--radius); width:100%; max-width:780px; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow-lg); transform:translateY(30px) scale(0.97); transition:transform 0.28s cubic-bezier(.34,1.56,.64,1); position:relative; }
+  .modal-overlay.open .modal { transform:translateY(0) scale(1); }
+  .modal::-webkit-scrollbar { width:6px; }
+  .modal::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  .modal-close { position:absolute; top:16px; left:16px; width:34px; height:34px; background:var(--surface2); border:none; border-radius:50%; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10; transition:background 0.15s; }
+  .modal-close:hover { background:var(--border); }
+
+  /* ===== VIEW MODAL ===== */
+  .modal-hero { position:relative; height:220px; background:var(--surface2); overflow:hidden; border-radius:var(--radius) var(--radius) 0 0; }
+  .modal-hero img { width:100%; height:100%; object-fit:cover; display:block; }
+  .modal-hero-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:72px; background:linear-gradient(135deg,#fef3e8,#ffe0c0); }
+  .modal-logo-wrap { position:absolute; bottom:-22px; right:24px; width:56px; height:56px; border-radius:14px; border:2.5px solid white; background:white; box-shadow:0 4px 14px rgba(0,0,0,0.14); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:26px; }
+  .modal-logo-wrap img { width:100%; height:100%; object-fit:contain; }
+  .modal-body { padding:32px 24px 24px; }
+  .modal-title-row { display:flex; align-items:flex-start; gap:12px; margin-bottom:4px; padding-left:50px; }
+  .modal-title { font-size:26px; font-weight:800; font-family:'Fredoka One',cursive; line-height:1.1; }
+  .modal-location { display:flex; align-items:center; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .modal-location a { font-size:13px; color:var(--accent3); text-decoration:none; font-weight:600; }
+  .modal-location a:hover { text-decoration:underline; }
+  .modal-date { font-size:12px; color:#b0a090; }
+  .modal-tagline { font-size:15px; color:var(--text-muted); font-style:italic; border-right:4px solid var(--accent); padding:8px 12px; background:var(--surface2); border-radius:0 8px 8px 0; margin-bottom:22px; line-height:1.5; }
+  .modal-score-row { display:flex; align-items:center; gap:10px; margin-bottom:22px; }
+  .modal-score-big { font-size:38px; font-weight:800; color:var(--accent); font-family:'Fredoka One',cursive; line-height:1; }
+  .modal-stars { display:flex; gap:3px; }
+  .modal-stars .star { font-size:20px; }
+  .modal-sections { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+  .modal-delete-btn { display:flex; align-items:center; gap:6px; font-family:'Heebo',sans-serif; font-size:13px; font-weight:700; color:#c0392b; background:#fff0ee; border:1.5px solid #f5c0b8; border-radius:8px; padding:7px 14px; cursor:pointer; transition:all 0.15s; }
+  .modal-delete-btn:hover { background:#ffe0da; border-color:var(--accent); }
+  .rating-section { background:var(--surface2); border-radius:var(--radius-sm); padding:14px; border:1.5px solid var(--border); }
+  .rating-section-title { font-size:13px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+  .rating-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .rating-row-label { font-size:12px; color:var(--text-muted); font-weight:500; min-width:100px; flex-shrink:0; }
+  .rating-bar-wrap { flex:1; height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+  .rating-bar-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--accent2),var(--accent)); transition:width 0.6s cubic-bezier(.34,1.56,.64,1); }
+  .rating-row-val { font-size:11px; font-weight:700; color:var(--text-muted); min-width:22px; text-align:left; }
+  .section-weight { font-size:11px; color:var(--accent2); font-weight:700; margin-right:auto; }
+  .radar-wrap { padding:16px; background:var(--surface2); border-radius:var(--radius-sm); border:1.5px solid var(--border); margin-bottom:16px; }
+  .radar-wrap h3 { font-size:13px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px; }
+  .radar-wrap canvas { max-height:240px; }
+
+  /* ===== COMPARE MODAL ===== */
+  .compare-modal { max-width:920px; }
+  .compare-modal-header { padding:22px 24px 16px; border-bottom:1.5px solid var(--border); font-size:20px; font-weight:800; display:flex; align-items:center; gap:10px; }
+  .compare-body { padding:20px 24px 28px; }
+  .compare-top { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:18px; }
+  .compare-col-a { border-right:3px solid var(--accent); padding-right:14px; }
+  .compare-col-b { border-right:3px solid var(--blue); padding-right:14px; }
+  .compare-col-title { font-size:18px; font-weight:800; font-family:'Fredoka One',cursive; margin-bottom:2px; }
+  .compare-col-city { font-size:13px; color:var(--text-muted); margin-bottom:6px; }
+  .compare-col-score-a { font-size:28px; font-weight:800; color:var(--accent); font-family:'Fredoka One',cursive; }
+  .compare-col-score-b { font-size:28px; font-weight:800; color:var(--blue); font-family:'Fredoka One',cursive; }
+  .winner-bar { text-align:center; padding:12px 16px; background:linear-gradient(135deg,#fff8f0,#fff0e8); border-radius:12px; margin-bottom:18px; border:1.5px solid var(--border); }
+  .compare-radar-wrap { background:var(--surface2); border-radius:var(--radius-sm); border:1.5px solid var(--border); padding:16px; margin-bottom:20px; }
+  .compare-radar-wrap h3 { font-size:13px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px; }
+  .compare-radar-wrap canvas { max-height:280px; }
+  .compare-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .compare-section { background:var(--surface2); border-radius:var(--radius-sm); padding:14px; border:1.5px solid var(--border); }
+  .compare-section-title { font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; }
+  .c-row { margin-bottom:9px; }
+  .c-row-label { font-size:11px; color:var(--text-muted); font-weight:600; margin-bottom:3px; }
+  .c-bar-line { display:flex; align-items:center; gap:6px; margin-bottom:2px; }
+  .c-name { font-size:10px; min-width:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+  .c-name-a { color:var(--accent); }
+  .c-name-b { color:var(--blue); }
+  .c-bar-bg { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .c-bar-a { height:100%; border-radius:3px; background:var(--accent); }
+  .c-bar-b { height:100%; border-radius:3px; background:var(--blue); }
+  .c-val { font-size:10px; font-weight:700; color:var(--text-muted); min-width:16px; text-align:left; }
+
+  /* ===== ADD MODAL ===== */
+  .add-modal { max-width:620px; }
+  .add-modal-header { padding:22px 24px 12px; border-bottom:1.5px solid var(--border); font-size:20px; font-weight:800; display:flex; align-items:center; gap:10px; }
+  .add-form { padding:20px 24px 28px; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group.full { grid-column:1/-1; }
+  .form-label { font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; }
+  .form-input,.form-textarea { font-family:'Heebo',sans-serif; font-size:14px; color:var(--text); background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:9px 12px; outline:none; transition:border-color 0.18s; direction:rtl; }
+  .form-input:focus,.form-textarea:focus { border-color:var(--accent); }
+  .form-textarea { resize:vertical; min-height:60px; }
+  .rating-sliders { margin-top:16px; }
+  .slider-section-title { font-size:13px; font-weight:800; color:var(--text); margin-bottom:8px; padding:6px 10px; background:var(--surface2); border-radius:8px; border-right:3px solid var(--accent); display:flex; justify-content:space-between; align-items:center; }
+  .slider-section-weight { font-size:11px; color:var(--accent2); font-weight:700; }
+  .slider-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; padding:0 4px; }
+  .slider-label { font-size:12px; color:var(--text-muted); font-weight:500; min-width:130px; flex-shrink:0; }
+  .slider-input { flex:1; accent-color:var(--accent); cursor:pointer; }
+  .slider-val { font-size:13px; font-weight:800; color:var(--accent); min-width:24px; text-align:center; }
+  .form-actions { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+  .btn { font-family:'Heebo',sans-serif; font-size:14px; font-weight:700; padding:10px 22px; border-radius:var(--radius-sm); border:none; cursor:pointer; transition:all 0.18s; }
+  .btn-primary { background:var(--accent); color:white; box-shadow:0 3px 10px rgba(232,64,28,0.3); }
+  .btn-primary:hover { background:#c8330f; }
+  .btn-secondary { background:var(--surface2); color:var(--text-muted); border:1.5px solid var(--border); }
+  .btn-secondary:hover { background:var(--border); }
+  .btn-danger { background:#fff0ee; color:#c0392b; border:1.5px solid #f5c0b8; }
+  .btn-danger:hover { background:#ffe0da; }
+
+  /* ===== CONFIRM ===== */
+  .confirm-overlay { position:fixed; inset:0; background:rgba(20,10,0,0.45); z-index:400; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.2s; backdrop-filter:blur(3px); }
+  .confirm-overlay.open { opacity:1; pointer-events:all; }
+  .confirm-box { background:var(--surface); border-radius:var(--radius); padding:28px 28px 22px; max-width:340px; width:100%; box-shadow:var(--shadow-lg); text-align:center; transform:scale(0.94); transition:transform 0.2s; }
+  .confirm-overlay.open .confirm-box { transform:scale(1); }
+  .confirm-box h3 { font-size:18px; font-weight:800; margin-bottom:10px; }
+  .confirm-box p { font-size:14px; color:var(--text-muted); margin-bottom:20px; line-height:1.5; }
+  .confirm-actions { display:flex; gap:10px; justify-content:center; }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state { grid-column:1/-1; text-align:center; padding:64px 24px; color:var(--text-muted); }
+  .empty-state .emoji { font-size:56px; margin-bottom:16px; }
+  .empty-state h3 { font-size:20px; font-weight:700; margin-bottom:8px; color:var(--text); }
+
+  @media (max-width:620px) {
+    .modal-sections,.compare-top,.compare-detail-grid,.form-grid { grid-template-columns:1fr; }
+    .grid { grid-template-columns:1fr; padding:12px 14px 40px; }
+    .filters-bar { padding:10px 14px 8px; }
+    header { padding:0 12px; }
+    .logo-text { font-size:20px; }
+    .header-search { max-width:160px; }
+    .compare-toggle-btn .btn-label { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a class="logo" href="#">
+    <div class="logo-icon">🍔</div>
+    <div class="logo-text">Burge<span>Rate</span></div>
+  </a>
+  <div class="header-search">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="חיפוש מסעדה..." oninput="onSearch(this)">
+    <button class="clear-search" id="clearSearchBtn" onclick="clearSearch()">✕</button>
+  </div>
+  <div class="header-actions">
+    <button class="compare-toggle-btn" id="compareModeBtn" onclick="toggleCompareMode()">⚖️ <span class="btn-label">השוואה</span></button>
+    <a id="addFormLink" href="#" target="_blank" class="add-btn" title="הוסף ביקורת דרך Google Form" style="text-decoration:none;font-size:20px">＋</a>
+  </div>
+</header>
+
+<!-- COMPARE HINT BAR -->
+<div class="compare-hint" id="compareHint">
+  <span id="compareHintText">בחר 2 מסעדות להשוואה</span>
+  <button class="compare-go-btn" id="compareGoBtn" disabled onclick="openCompareModal()">השווה ←</button>
+</div>
+
+<!-- FILTERS -->
+<div class="filters-bar">
+  <span class="filter-label">סינון:</span>
+  <select class="filter-select" id="cityFilter" onchange="applyFilters()">
+    <option value="">כל הערים</option>
+  </select>
+  <div class="filter-chips">
+    <div class="chip active" onclick="setRatingFilter(this,'all')">הכל</div>
+    <div class="chip" onclick="setRatingFilter(this,'4')">⭐ 4+</div>
+    <div class="chip" onclick="setRatingFilter(this,'3')">⭐ 3+</div>
+    <div class="chip" onclick="setRatingFilter(this,'2')">⭐ 2+</div>
+  </div>
+  <span class="filter-label" style="margin-right:4px">מיון:</span>
+  <select class="filter-select" id="sortSelect" onchange="applyFilters()">
+    <option value="score_desc">ציון ↓ (גבוה ראשון)</option>
+    <option value="score_asc">ציון ↑ (נמוך ראשון)</option>
+    <option value="date_desc">תאריך — חדש ראשון</option>
+    <option value="date_asc">תאריך — ישן ראשון</option>
+    <option value="name_asc">שם א–ת</option>
+    <option value="name_desc">שם ת–א</option>
+  </select>
+  <span class="results-count" id="resultsCount"></span>
+</div>
+
+<!-- GRID -->
+<div class="grid" id="grid"></div>
+
+<!-- VIEW MODAL -->
+<div class="modal-overlay" id="viewOverlay" onclick="closeViewModal(event)">
+  <div class="modal"><button class="modal-close" onclick="closeViewModalDirect()">✕</button><div id="viewContent"></div></div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="modal-overlay" id="compareOverlay" onclick="closeCompareModal(event)">
+  <div class="modal compare-modal">
+    <button class="modal-close" onclick="closeCompareModalDirect()">✕</button>
+    <div class="compare-modal-header">⚖️ השוואת מסעדות</div>
+    <div class="compare-body" id="compareBody"></div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addOverlay" onclick="closeAddModal(event)">
+  <div class="modal add-modal">
+    <button class="modal-close" onclick="closeAddModalDirect()">✕</button>
+    <div class="add-modal-header">🍔 הוסף מסעדה חדשה</div>
+    <div class="add-form">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">שם המסעדה *</label><input class="form-input" id="f_name" placeholder="למשל: HaBurger"></div>
+        <div class="form-group"><label class="form-label">עיר *</label><input class="form-input" id="f_city" placeholder="למשל: תל אביב"></div>
+        <div class="form-group full"><label class="form-label">קישור למפות</label><input class="form-input" id="f_map" placeholder="https://maps.google.com/..."></div>
+        <div class="form-group"><label class="form-label">תאריך ביקור</label><input class="form-input" type="date" id="f_date"></div>
+        <div class="form-group"><label class="form-label">URL לוגו</label><input class="form-input" id="f_logo" placeholder="https://..."></div>
+        <div class="form-group full"><label class="form-label">URL תמונת מנה</label><input class="form-input" id="f_img" placeholder="https://..."></div>
+        <div class="form-group full"><label class="form-label">משפט מחץ</label><textarea class="form-textarea" id="f_tagline" placeholder="סיכום קצר וחד שמתאר את החוויה..."></textarea></div>
+      </div>
+      <div class="rating-sliders">
+        <div class="slider-section-title">🥩 איכות ההמבורגר <span class="slider-section-weight">40%</span></div>
+        <div class="slider-row"><span class="slider-label">איכות הבשר</span><input type="range" class="slider-input" id="s_meat_quality" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_meat_quality')"><span class="slider-val" id="v_meat_quality">3</span></div>
+        <div class="slider-row"><span class="slider-label">מידת עשייה ועסיסיות</span><input type="range" class="slider-input" id="s_doneness" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_doneness')"><span class="slider-val" id="v_doneness">3</span></div>
+        <div class="slider-row"><span class="slider-label">יחס שומן / עומק טעם</span><input type="range" class="slider-input" id="s_fat" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_fat')"><span class="slider-val" id="v_fat">3</span></div>
+        <div class="slider-row"><span class="slider-label">חריכה (Sear)</span><input type="range" class="slider-input" id="s_sear" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_sear')"><span class="slider-val" id="v_sear">3</span></div>
+        <div class="slider-section-title" style="margin-top:14px">🍞 בניית ההמבורגר <span class="slider-section-weight">20%</span></div>
+        <div class="slider-row"><span class="slider-label">לחמנייה</span><input type="range" class="slider-input" id="s_bun" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_bun')"><span class="slider-val" id="v_bun">3</span></div>
+        <div class="slider-row"><span class="slider-label">יחס קציצה–לחמנייה</span><input type="range" class="slider-input" id="s_ratio" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_ratio')"><span class="slider-val" id="v_ratio">3</span></div>
+        <div class="slider-row"><span class="slider-label">יציבות באכילה</span><input type="range" class="slider-input" id="s_stability" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_stability')"><span class="slider-val" id="v_stability">3</span></div>
+        <div class="slider-row"><span class="slider-label">איזון טעמים</span><input type="range" class="slider-input" id="s_balance" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_balance')"><span class="slider-val" id="v_balance">3</span></div>
+        <div class="slider-section-title" style="margin-top:14px">🍟 תוספות <span class="slider-section-weight">15%</span></div>
+        <div class="slider-row"><span class="slider-label">צ'יפס / תוספות</span><input type="range" class="slider-input" id="s_fries" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_fries')"><span class="slider-val" id="v_fries">3</span></div>
+        <div class="slider-row"><span class="slider-label">איכות הירקות</span><input type="range" class="slider-input" id="s_veggies" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_veggies')"><span class="slider-val" id="v_veggies">3</span></div>
+        <div class="slider-row"><span class="slider-label">רטבים ביתיים</span><input type="range" class="slider-input" id="s_sauces" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_sauces')"><span class="slider-val" id="v_sauces">3</span></div>
+        <div class="slider-row"><span class="slider-label">גיוון בתפריט</span><input type="range" class="slider-input" id="s_variety" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_variety')"><span class="slider-val" id="v_variety">3</span></div>
+        <div class="slider-section-title" style="margin-top:14px">🏠 חווית המקום <span class="slider-section-weight">15%</span></div>
+        <div class="slider-row"><span class="slider-label">שירות</span><input type="range" class="slider-input" id="s_service" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_service')"><span class="slider-val" id="v_service">3</span></div>
+        <div class="slider-row"><span class="slider-label">ניקיון</span><input type="range" class="slider-input" id="s_clean" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_clean')"><span class="slider-val" id="v_clean">3</span></div>
+        <div class="slider-row"><span class="slider-label">אווירה</span><input type="range" class="slider-input" id="s_vibe" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_vibe')"><span class="slider-val" id="v_vibe">3</span></div>
+        <div class="slider-row"><span class="slider-label">מהירות הוצאה</span><input type="range" class="slider-input" id="s_speed" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_speed')"><span class="slider-val" id="v_speed">3</span></div>
+        <div class="slider-section-title" style="margin-top:14px">💰 תמורה למחיר <span class="slider-section-weight">10%</span></div>
+        <div class="slider-row"><span class="slider-label">גודל מנה</span><input type="range" class="slider-input" id="s_size" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_size')"><span class="slider-val" id="v_size">3</span></div>
+        <div class="slider-row"><span class="slider-label">מחיר מול איכות</span><input type="range" class="slider-input" id="s_value" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_value')"><span class="slider-val" id="v_value">3</span></div>
+        <div class="slider-row"><span class="slider-label">האם היית חוזר</span><input type="range" class="slider-input" id="s_return" min="0" max="5" step="0.5" value="3" oninput="syncSlider(this,'v_return')"><span class="slider-val" id="v_return">3</span></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="closeAddModalDirect()">ביטול</button>
+        <button class="btn btn-primary" onclick="saveRestaurant()">שמור מסעדה 🍔</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3>🗑️ מחיקת מסעדה</h3>
+    <p id="confirmText"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">ביטול</button>
+      <button class="btn btn-danger" id="confirmYesBtn">מחק</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================
+// 🔧 הגדרות — ערוך כאן בלבד
+// =========================================
+// 1. העתק את כתובת ה-CSV של Google Sheets שלך לכאן:
+//    (File → Share → Publish to web → CSV → Copy link)
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQgxs_oK4ytYiflovhXKbfdoJxG0lCQLoKnigJy-hQYg8nfzmhF3gFF0zkXqiYRBTlvubcdS12WxZ-/pub?gid=1516836364&single=true&output=csv';   // ← הכנס את ה-URL כאן
+
+// 3. הכנס כאן את קישור ה-Google Form (לכפתור ה-＋):
+const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdPK9qCVZewhlod1n3NW8XjaXd1NLARHGCQTDF4iQlqx2E1QQ/viewform?usp=header'; // ← הכנס את קישור ה-Form כאן
+
+// 2. סדר העמודות בגיליון (כפי שמגיע מ-Google Form):
+//    Timestamp | שם המסעדה | עיר | קישור מפות | URL לוגו | URL תמונת מנה |
+//    תאריך ביקור | משפט מחץ |
+//    איכות בשר | עסיסיות | יחס שומן | חריכה |
+//    לחמנייה | יחס קציצה | יציבות | איזון |
+//    צ'יפס | ירקות | רטבים | גיוון |
+//    שירות | ניקיון | אווירה | מהירות |
+//    גודל מנה | מחיר/איכות | חזרה
+// =========================================
+
+let restaurants = JSON.parse(localStorage.getItem('burgeRate_v2') || '[]');
+let activeRatingFilter = 'all';
+let compareMode = false;
+let compareSelected = [];
+let radarInst = null;
+let compareInst = null;
+let pendingDeleteId = null;
+let pendingDeleteFromModal = false;
+
+// =========================================
+// SCORE
+// =========================================
+function calcScore(rt) {
+  const avg = a => a.reduce((x,y)=>x+y,0)/a.length;
+  return avg([rt.meat_quality,rt.doneness,rt.fat,rt.sear])*0.40
+       + avg([rt.bun,rt.ratio,rt.stability,rt.balance])*0.20
+       + avg([rt.fries,rt.veggies,rt.sauces,rt.variety])*0.15
+       + avg([rt.service,rt.clean,rt.vibe,rt.speed])*0.15
+       + avg([rt.size,rt.value_price,rt.return_visit])*0.10;
+}
+
+function stars(score, big=false) {
+  let h=`<div class="${big?'modal-stars':'card-stars'}">`;
+  for(let i=1;i<=5;i++){
+    if(score>=i) h+='<span class="star filled">★</span>';
+    else if(score>=i-0.5) h+='<span class="star half">★</span>';
+    else h+='<span class="star">★</span>';
+  }
+  return h+'</div>';
+}
+
+// =========================================
+// RANK MAP — top 3 across ALL restaurants
+// =========================================
+function getRankMap() {
+  const sorted=[...restaurants].sort((a,b)=>calcScore(b.ratings)-calcScore(a.ratings));
+  const m={};
+  sorted.forEach((r,i)=>{ if(i<3) m[r.id]=i+1; });
+  return m;
+}
+const MEDAL={1:'🥇',2:'🥈',3:'🥉'};
+
+// =========================================
+// SEARCH
+// =========================================
+function onSearch(el) {
+  document.getElementById('clearSearchBtn').style.display = el.value ? 'block' : 'none';
+  applyFilters();
+}
+function clearSearch() {
+  const inp=document.getElementById('searchInput');
+  inp.value='';
+  document.getElementById('clearSearchBtn').style.display='none';
+  applyFilters();
+}
+
+// =========================================
+// FILTERS + SORT + RENDER
+// =========================================
+function applyFilters() {
+  const city=document.getElementById('cityFilter').value;
+  const query=(document.getElementById('searchInput').value||'').trim().toLowerCase();
+  const sort=document.getElementById('sortSelect').value;
+
+  let list=[...restaurants];
+  if(city) list=list.filter(r=>r.city===city);
+  if(activeRatingFilter!=='all') list=list.filter(r=>calcScore(r.ratings)>=parseFloat(activeRatingFilter));
+  if(query) list=list.filter(r=>r.name.toLowerCase().includes(query)||r.city.toLowerCase().includes(query));
+
+  list.sort((a,b)=>{
+    const sa=calcScore(a.ratings),sb=calcScore(b.ratings);
+    if(sort==='score_desc') return sb-sa;
+    if(sort==='score_asc') return sa-sb;
+    if(sort==='date_desc') return (b.date||'').localeCompare(a.date||'');
+    if(sort==='date_asc') return (a.date||'').localeCompare(b.date||'');
+    if(sort==='name_asc') return a.name.localeCompare(b.name,'he');
+    if(sort==='name_desc') return b.name.localeCompare(a.name,'he');
+    return 0;
+  });
+
+  renderGrid(list);
+  document.getElementById('resultsCount').textContent=list.length+' מסעדות';
+}
+
+function setRatingFilter(el,val) {
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  activeRatingFilter=val;
+  applyFilters();
+}
+
+function updateCityOptions() {
+  const sel=document.getElementById('cityFilter'), cur=sel.value;
+  const cities=[...new Set(restaurants.map(r=>r.city))].sort();
+  sel.innerHTML='<option value="">כל הערים</option>';
+  cities.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+  sel.value=cur;
+}
+
+function renderGrid(list) {
+  const grid=document.getElementById('grid');
+  const rankMap=getRankMap();
+  if(!list.length){
+    grid.innerHTML=`<div class="empty-state"><div class="emoji">🍔</div><h3>אין מסעדות עדיין</h3><p>לחץ על ＋ כדי להוסיף את הבורגר הראשון</p></div>`;
+    if(compareMode) grid.classList.add('compare-mode'); else grid.classList.remove('compare-mode');
+    return;
+  }
+  grid.innerHTML=list.map(r=>{
+    const score=calcScore(r.ratings);
+    const logoHtml=r.logoUrl
+      ?`<img class="card-logo" src="${r.logoUrl}" onerror="this.style.display='none'" alt="">`
+      :`<div class="card-logo-placeholder">🏪</div>`;
+    const imgHtml=r.imgUrl
+      ?`<img class="card-img" src="${r.imgUrl}" onerror="this.outerHTML='<div class=card-img-placeholder>🍔</div>'" alt="">`
+      :`<div class="card-img-placeholder">🍔</div>`;
+    const medal=rankMap[r.id]?`<div class="rank-badge">${MEDAL[rankMap[r.id]]}</div>`:'';
+    const chk=compareSelected.includes(r.id);
+    return `<div class="card${chk?' compare-selected':''}" onclick="handleCardClick('${r.id}',event)">
+      <div class="compare-check">${chk?'✓':''}</div>
+      ${imgHtml}
+      <div class="card-score-badge">${score.toFixed(1)}</div>
+      ${medal}
+      <button class="card-delete-btn" onclick="confirmDelete('${r.id}',event)" title="מחק">🗑️</button>
+      <div class="card-body">
+        <div class="card-header-row">${logoHtml}<div><div class="card-name">${esc(r.name)}</div><div class="card-city">📍 ${esc(r.city)}</div></div></div>
+        ${r.mapUrl?`<a class="card-location-link" href="${r.mapUrl}" target="_blank" onclick="event.stopPropagation()">🗺️ פתח במפות</a>`:''}
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">${stars(score)}<span class="card-score-text">${score.toFixed(1)}/5</span></div>
+        ${r.tagline?`<div class="card-tagline">${esc(r.tagline)}</div>`:''}
+        ${r.date?`<div class="card-date">📅 ${fmtDate(r.date)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  if(compareMode) grid.classList.add('compare-mode'); else grid.classList.remove('compare-mode');
+}
+
+// =========================================
+// COMPARE MODE
+// =========================================
+function toggleCompareMode() {
+  compareMode=!compareMode;
+  compareSelected=[];
+  const btn=document.getElementById('compareModeBtn');
+  const hint=document.getElementById('compareHint');
+  btn.classList.toggle('active',compareMode);
+  hint.classList.toggle('visible',compareMode);
+  updateCompareHint();
+  applyFilters();
+}
+
+function handleCardClick(id,e) {
+  if(compareMode){ e.stopPropagation(); toggleCompareSelect(id); }
+  else openViewModal(id);
+}
+
+function toggleCompareSelect(id) {
+  if(compareSelected.includes(id)) compareSelected=compareSelected.filter(x=>x!==id);
+  else { if(compareSelected.length>=2) compareSelected.shift(); compareSelected.push(id); }
+  updateCompareHint();
+  applyFilters();
+}
+
+function updateCompareHint() {
+  const n=compareSelected.length;
+  const msgs=['בחר 2 מסעדות להשוואה','בחרת 1 מתוך 2 — בחר עוד אחת','2 מסעדות נבחרו — מוכן להשוואה! 🔥'];
+  document.getElementById('compareHintText').textContent=msgs[n]||msgs[0];
+  document.getElementById('compareGoBtn').disabled=n!==2;
+}
+
+// =========================================
+// COMPARE MODAL
+// =========================================
+function openCompareModal() {
+  if(compareSelected.length!==2) return;
+  const [a,b]=compareSelected.map(id=>restaurants.find(r=>r.id===id));
+  const sa=calcScore(a.ratings), sb=calcScore(b.ratings);
+  const avg=arr=>arr.reduce((x,y)=>x+y,0)/arr.length;
+
+  const cats=[
+    {l:'🥩 בשר', av:avg([a.ratings.meat_quality,a.ratings.doneness,a.ratings.fat,a.ratings.sear]), bv:avg([b.ratings.meat_quality,b.ratings.doneness,b.ratings.fat,b.ratings.sear])},
+    {l:'🍞 בניה', av:avg([a.ratings.bun,a.ratings.ratio,a.ratings.stability,a.ratings.balance]), bv:avg([b.ratings.bun,b.ratings.ratio,b.ratings.stability,b.ratings.balance])},
+    {l:'🍟 תוספות', av:avg([a.ratings.fries,a.ratings.veggies,a.ratings.sauces,a.ratings.variety]), bv:avg([b.ratings.fries,b.ratings.veggies,b.ratings.sauces,b.ratings.variety])},
+    {l:'🏠 חוויה', av:avg([a.ratings.service,a.ratings.clean,a.ratings.vibe,a.ratings.speed]), bv:avg([b.ratings.service,b.ratings.clean,b.ratings.vibe,b.ratings.speed])},
+    {l:'💰 תמורה', av:avg([a.ratings.size,a.ratings.value_price,a.ratings.return_visit]), bv:avg([b.ratings.size,b.ratings.value_price,b.ratings.return_visit])},
+  ];
+
+  const details=[
+    {t:'🥩 איכות הבורגר', rows:[{l:'איכות בשר',av:a.ratings.meat_quality,bv:b.ratings.meat_quality},{l:'עסיסיות',av:a.ratings.doneness,bv:b.ratings.doneness},{l:'יחס שומן',av:a.ratings.fat,bv:b.ratings.fat},{l:'חריכה',av:a.ratings.sear,bv:b.ratings.sear}]},
+    {t:'🍞 בניה', rows:[{l:'לחמנייה',av:a.ratings.bun,bv:b.ratings.bun},{l:'יחס קציצה',av:a.ratings.ratio,bv:b.ratings.ratio},{l:'יציבות',av:a.ratings.stability,bv:b.ratings.stability},{l:'איזון',av:a.ratings.balance,bv:b.ratings.balance}]},
+    {t:'🍟 תוספות', rows:[{l:"צ'יפס",av:a.ratings.fries,bv:b.ratings.fries},{l:'ירקות',av:a.ratings.veggies,bv:b.ratings.veggies},{l:'רטבים',av:a.ratings.sauces,bv:b.ratings.sauces},{l:'גיוון',av:a.ratings.variety,bv:b.ratings.variety}]},
+    {t:'🏠 חווית המקום', rows:[{l:'שירות',av:a.ratings.service,bv:b.ratings.service},{l:'ניקיון',av:a.ratings.clean,bv:b.ratings.clean},{l:'אווירה',av:a.ratings.vibe,bv:b.ratings.vibe},{l:'מהירות',av:a.ratings.speed,bv:b.ratings.speed}]},
+    {t:'💰 תמורה', rows:[{l:'גודל מנה',av:a.ratings.size,bv:b.ratings.size},{l:'מחיר/איכות',av:a.ratings.value_price,bv:b.ratings.value_price},{l:'חזרה',av:a.ratings.return_visit,bv:b.ratings.return_visit}]},
+  ];
+
+  const winner=sa>=sb?a.name:b.name;
+  const diff=Math.abs(sa-sb).toFixed(2);
+
+  document.getElementById('compareBody').innerHTML=`
+    <div class="compare-top">
+      <div class="compare-col-a">
+        <div class="compare-col-title">${esc(a.name)}</div>
+        <div class="compare-col-city">📍 ${esc(a.city)}</div>
+        <div class="compare-col-score-a">${sa.toFixed(1)}</div>
+        ${stars(sa,true)}
+      </div>
+      <div class="compare-col-b">
+        <div class="compare-col-title">${esc(b.name)}</div>
+        <div class="compare-col-city">📍 ${esc(b.city)}</div>
+        <div class="compare-col-score-b">${sb.toFixed(1)}</div>
+        ${stars(sb,true)}
+      </div>
+    </div>
+    <div class="winner-bar">
+      🏆 <strong>המנצח: ${esc(winner)}</strong> &nbsp;<span style="color:var(--text-muted);font-size:13px">(${diff} נקודות הפרש)</span>
+    </div>
+    <div class="compare-radar-wrap">
+      <h3>📡 השוואת מפת חוזקות</h3>
+      <canvas id="compareRadarChart"></canvas>
+    </div>
+    <div class="compare-detail-grid">
+      ${details.map(sec=>`
+        <div class="compare-section">
+          <div class="compare-section-title">${sec.t}</div>
+          ${sec.rows.map(row=>`
+            <div class="c-row">
+              <div class="c-row-label">${row.l}</div>
+              <div class="c-bar-line"><span class="c-name c-name-a">${esc(a.name)}</span><div class="c-bar-bg"><div class="c-bar-a" style="width:${(row.av/5)*100}%"></div></div><span class="c-val">${row.av}</span></div>
+              <div class="c-bar-line"><span class="c-name c-name-b">${esc(b.name)}</span><div class="c-bar-bg"><div class="c-bar-b" style="width:${(row.bv/5)*100}%"></div></div><span class="c-val">${row.bv}</span></div>
+            </div>`).join('')}
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('compareOverlay').classList.add('open');
+
+  if(compareInst) compareInst.destroy();
+  const ctx=document.getElementById('compareRadarChart').getContext('2d');
+  compareInst=new Chart(ctx,{
+    type:'radar',
+    data:{
+      labels:cats.map(c=>c.l),
+      datasets:[
+        {label:a.name,data:cats.map(c=>c.av),backgroundColor:'rgba(232,64,28,0.12)',borderColor:'#e8401c',borderWidth:2.5,pointBackgroundColor:'#e8401c',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5},
+        {label:b.name,data:cats.map(c=>c.bv),backgroundColor:'rgba(74,159,212,0.12)',borderColor:'#4a9fd4',borderWidth:2.5,pointBackgroundColor:'#4a9fd4',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5}
+      ]
+    },
+    options:{responsive:true,scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},pointLabels:{font:{size:12,family:'Heebo'}}}},plugins:{legend:{display:true,position:'bottom',labels:{font:{family:'Heebo',size:12}}}}}
+  });
+}
+
+function closeCompareModal(e){if(e.target===document.getElementById('compareOverlay'))closeCompareModalDirect();}
+function closeCompareModalDirect(){document.getElementById('compareOverlay').classList.remove('open');if(compareInst){compareInst.destroy();compareInst=null;}}
+
+// =========================================
+// VIEW MODAL
+// =========================================
+function openViewModal(id){
+  const r=restaurants.find(x=>x.id===id); if(!r) return;
+  const score=calcScore(r.ratings), rt=r.ratings;
+  const secs=[
+    {title:'🥩 איכות ההמבורגר',weight:'40%',items:[{l:'איכות הבשר',v:rt.meat_quality},{l:'מידת עשייה',v:rt.doneness},{l:'יחס שומן',v:rt.fat},{l:'חריכה',v:rt.sear}]},
+    {title:'🍞 בניית ההמבורגר',weight:'20%',items:[{l:'לחמנייה',v:rt.bun},{l:'יחס קציצה',v:rt.ratio},{l:'יציבות',v:rt.stability},{l:'איזון',v:rt.balance}]},
+    {title:'🍟 תוספות',weight:'15%',items:[{l:"צ'יפס",v:rt.fries},{l:'ירקות',v:rt.veggies},{l:'רטבים',v:rt.sauces},{l:'גיוון',v:rt.variety}]},
+    {title:'🏠 חווית המקום',weight:'15%',items:[{l:'שירות',v:rt.service},{l:'ניקיון',v:rt.clean},{l:'אווירה',v:rt.vibe},{l:'מהירות',v:rt.speed}]},
+    {title:'💰 תמורה למחיר',weight:'10%',items:[{l:'גודל מנה',v:rt.size},{l:'מחיר/איכות',v:rt.value_price},{l:'חזרה?',v:rt.return_visit}]},
+  ];
+  const heroHtml=r.imgUrl?`<img src="${r.imgUrl}" alt="" onerror="this.outerHTML='<div class=modal-hero-placeholder>🍔</div>'">`:
+    `<div class="modal-hero-placeholder">🍔</div>`;
+  const logoHtml=r.logoUrl?`<img src="${r.logoUrl}" alt="" onerror="this.outerHTML='🏪'">`: '🏪';
+  document.getElementById('viewContent').innerHTML=`
+    <div class="modal-hero">${heroHtml}<div class="modal-logo-wrap">${logoHtml}</div></div>
+    <div class="modal-body">
+      <div class="modal-title-row"><div class="modal-title">${esc(r.name)}</div></div>
+      <div class="modal-location">📍 ${esc(r.city)}${r.mapUrl?`&nbsp;<a href="${r.mapUrl}" target="_blank">פתח במפות 🗺️</a>`:''}${r.date?`<span class="modal-date">📅 ${fmtDate(r.date)}</span>`:''}</div>
+      ${r.tagline?`<div class="modal-tagline">"${esc(r.tagline)}"</div>`:''}
+      <div class="modal-score-row"><div class="modal-score-big">${score.toFixed(1)}</div>${stars(score,true)}<span style="color:var(--text-muted);font-size:13px;font-weight:600;">/ 5</span></div>
+      <div class="radar-wrap"><h3>📡 מפת חוזקות</h3><canvas id="radarChart"></canvas></div>
+      <div class="modal-sections">
+        ${secs.map(s=>`<div class="rating-section"><div class="rating-section-title">${s.title} <span class="section-weight">${s.weight}</span></div>${s.items.map(it=>`<div class="rating-row"><span class="rating-row-label">${it.l}</span><div class="rating-bar-wrap"><div class="rating-bar-fill" style="width:${(it.v/5)*100}%"></div></div><span class="rating-row-val">${it.v}</span></div>`).join('')}</div>`).join('')}
+      </div>
+      <button class="modal-delete-btn" onclick="confirmDelete('${r.id}',null,true)">🗑️ מחק מסעדה</button>
+    </div>`;
+  document.getElementById('viewOverlay').classList.add('open');
+  if(radarInst) radarInst.destroy();
+  const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  const ctx=document.getElementById('radarChart').getContext('2d');
+  radarInst=new Chart(ctx,{
+    type:'radar',
+    data:{labels:['איכות בשר','בניה','תוספות','חוויה','תמורה'],
+      datasets:[{data:[avg([rt.meat_quality,rt.doneness,rt.fat,rt.sear]),avg([rt.bun,rt.ratio,rt.stability,rt.balance]),avg([rt.fries,rt.veggies,rt.sauces,rt.variety]),avg([rt.service,rt.clean,rt.vibe,rt.speed]),avg([rt.size,rt.value_price,rt.return_visit])],
+        backgroundColor:'rgba(232,64,28,0.15)',borderColor:'#e8401c',borderWidth:2.5,pointBackgroundColor:'#e8401c',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5}]},
+    options:{responsive:true,scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},pointLabels:{font:{size:12,family:'Heebo'}}}},plugins:{legend:{display:false}}}
+  });
+}
+function closeViewModal(e){if(e.target===document.getElementById('viewOverlay'))closeViewModalDirect();}
+function closeViewModalDirect(){document.getElementById('viewOverlay').classList.remove('open');if(radarInst){radarInst.destroy();radarInst=null;}}
+
+// =========================================
+// DELETE
+// =========================================
+function confirmDelete(id,e,fromModal=false){
+  if(e) e.stopPropagation();
+  const r=restaurants.find(x=>x.id===id); if(!r) return;
+  pendingDeleteId=id; pendingDeleteFromModal=fromModal;
+  document.getElementById('confirmText').textContent=`האם למחוק את "${r.name}"? פעולה זו אינה הפיכה.`;
+  document.getElementById('confirmYesBtn').onclick=()=>{
+    doDelete(pendingDeleteId);
+    closeConfirm();
+    if(pendingDeleteFromModal) closeViewModalDirect();
+  };
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function doDelete(id){
+  restaurants=restaurants.filter(r=>r.id!==id);
+  compareSelected=compareSelected.filter(x=>x!==id);
+  save(); updateCityOptions(); updateCompareHint(); applyFilters();
+}
+function closeConfirm(){document.getElementById('confirmOverlay').classList.remove('open');pendingDeleteId=null;}
+
+// =========================================
+// ADD / SAVE
+// =========================================
+function openAddModal(){document.getElementById('addOverlay').classList.add('open');}
+function closeAddModal(e){if(e.target===document.getElementById('addOverlay'))closeAddModalDirect();}
+function closeAddModalDirect(){document.getElementById('addOverlay').classList.remove('open');}
+function syncSlider(el,valId){document.getElementById(valId).textContent=el.value;}
+
+function saveRestaurant(){
+  const name=document.getElementById('f_name').value.trim();
+  const city=document.getElementById('f_city').value.trim();
+  if(!name||!city){alert('נא למלא שם מסעדה ועיר');return;}
+  const g=id=>parseFloat(document.getElementById(id).value);
+  restaurants.unshift({
+    id:Date.now().toString(), name, city,
+    mapUrl:document.getElementById('f_map').value.trim(),
+    logoUrl:document.getElementById('f_logo').value.trim(),
+    imgUrl:document.getElementById('f_img').value.trim(),
+    date:document.getElementById('f_date').value,
+    tagline:document.getElementById('f_tagline').value.trim(),
+    ratings:{meat_quality:g('s_meat_quality'),doneness:g('s_doneness'),fat:g('s_fat'),sear:g('s_sear'),bun:g('s_bun'),ratio:g('s_ratio'),stability:g('s_stability'),balance:g('s_balance'),fries:g('s_fries'),veggies:g('s_veggies'),sauces:g('s_sauces'),variety:g('s_variety'),service:g('s_service'),clean:g('s_clean'),vibe:g('s_vibe'),speed:g('s_speed'),size:g('s_size'),value_price:g('s_value'),return_visit:g('s_return')}
+  });
+  save(); updateCityOptions(); applyFilters(); closeAddModalDirect(); resetForm();
+}
+
+function resetForm(){
+  ['f_name','f_city','f_map','f_logo','f_img','f_tagline'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f_date').value='';
+  ['s_meat_quality','s_doneness','s_fat','s_sear','s_bun','s_ratio','s_stability','s_balance','s_fries','s_veggies','s_sauces','s_variety','s_service','s_clean','s_vibe','s_speed','s_size','s_value','s_return'].forEach(id=>{
+    document.getElementById(id).value=3;
+    syncSlider(document.getElementById(id),id.replace('s_','v_'));
+  });
+}
+
+// =========================================
+// UTILS
+// =========================================
+function save(){localStorage.setItem('burgeRate_v2',JSON.stringify(restaurants));}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}
+
+// =========================================
+// CSV PARSER — handles commas inside quotes
+// =========================================
+function parseCSV(text){
+  const lines=[];
+  const rows=text.trim().split('\n');
+  for(const row of rows){
+    const cols=[];
+    let cur='',inQ=false;
+    for(let i=0;i<row.length;i++){
+      const ch=row[i];
+      if(ch==='"'){if(inQ&&row[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+      else if(ch===','&&!inQ){cols.push(cur.trim());cur='';}
+      else cur+=ch;
+    }
+    cols.push(cur.trim());
+    lines.push(cols);
+  }
+  return lines;
+}
+
+function rowToRestaurant(c,idx){
+  // Google Form adds a Timestamp column as first column — detect and skip it
+  const hasTs=c[0]&&(/^\d{1,2}[\/\-]/.test(c[0])||/^\d{4}-\d{2}/.test(c[0]));
+  const o=hasTs?1:0;
+  return{
+    id:((c[o+0]||'').replace(/\s/g,'_').replace(/[^a-zA-Z\u0590-\u05fe0-9_]/g,''))+'_'+idx,
+    name:    c[o+0]||'',
+    city:    c[o+1]||'',
+    mapUrl:  c[o+2]||'',
+    logoUrl: c[o+3]||'',
+    imgUrl:  c[o+4]||'',
+    date:    c[o+5]||'',
+    tagline: c[o+6]||'',
+    ratings:{
+      meat_quality: parseFloat(c[o+7])||0,  doneness:     parseFloat(c[o+8])||0,
+      fat:          parseFloat(c[o+9])||0,  sear:         parseFloat(c[o+10])||0,
+      bun:          parseFloat(c[o+11])||0, ratio:        parseFloat(c[o+12])||0,
+      stability:    parseFloat(c[o+13])||0, balance:      parseFloat(c[o+14])||0,
+      fries:        parseFloat(c[o+15])||0, veggies:      parseFloat(c[o+16])||0,
+      sauces:       parseFloat(c[o+17])||0, variety:      parseFloat(c[o+18])||0,
+      service:      parseFloat(c[o+19])||0, clean:        parseFloat(c[o+20])||0,
+      vibe:         parseFloat(c[o+21])||0, speed:        parseFloat(c[o+22])||0,
+      size:         parseFloat(c[o+23])||0, value_price:  parseFloat(c[o+24])||0,
+      return_visit: parseFloat(c[o+25])||0,
+    }
+  };
+}
+
+// =========================================
+// LOADING / ERROR UI
+// =========================================
+function showLoading(){
+  document.getElementById('grid').innerHTML=`
+    <div class="empty-state">
+      <div class="emoji" style="animation:spin 1.2s linear infinite;display:inline-block">⏳</div>
+      <h3>טוען נתונים מ-Google Sheets...</h3>
+      <p>מתחבר לגיליון, רגע אחד</p>
+    </div>`;
+}
+
+function showSheetError(msg){
+  document.getElementById('grid').innerHTML=`
+    <div class="empty-state">
+      <div class="emoji">⚠️</div>
+      <h3>לא ניתן לטעון נתונים</h3>
+      <p style="margin-top:8px;max-width:440px;margin-inline:auto;line-height:1.6">${msg}</p>
+      <button onclick="init()" style="margin-top:18px;padding:9px 22px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:Heebo,sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(232,64,28,0.3)">נסה שוב 🔄</button>
+    </div>`;
+}
+
+function showBanner(msg,type='info'){
+  let b=document.getElementById('infoBanner');
+  if(!b){
+    b=document.createElement('div');b.id='infoBanner';
+    const fb=document.querySelector('.filters-bar');
+    fb.parentNode.insertBefore(b,fb);
+  }
+  const bg=type==='warn'?'#fff8e0':'#e8f5ff';
+  const bc=type==='warn'?'#f0d060':'#b8daf5';
+  const tc=type==='warn'?'#7a5a00':'#1a6fa0';
+  b.style.cssText=`padding:8px 28px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;background:${bg};border-bottom:1.5px solid ${bc};color:${tc}`;
+  b.innerHTML=msg+`<button onclick="this.parentElement.remove()" style="margin-right:auto;background:none;border:none;cursor:pointer;font-size:16px;color:inherit;line-height:1">✕</button>`;
+}
+
+function updateLastRefresh(){
+  const el=document.getElementById('lastRefresh');
+  if(el) el.textContent='עודכן '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+}
+
+// =========================================
+// GOOGLE SHEETS LOAD
+// =========================================
+async function loadFromSheets(){
+  if(!SHEET_CSV_URL){
+    showSheetError('כתובת Google Sheets לא הוגדרה.<br><small>ערוך את <code style="background:#f5f0e8;padding:2px 6px;border-radius:4px">SHEET_CSV_URL</code> בראש קוד ה-HTML.</small>');
+    return false;
+  }
+  showLoading();
+  const url=SHEET_CSV_URL+(SHEET_CSV_URL.includes('?')?'&':'?')+'cb='+Date.now();
+  try{
+    const resp=await fetch(url);
+    if(!resp.ok) throw new Error('שגיאת HTTP '+resp.status);
+    const csv=await resp.text();
+    if(!csv||csv.trim().length<5) throw new Error('הגיליון ריק');
+    const all=parseCSV(csv);
+    if(all.length<2) throw new Error('אין שורות נתונים בגיליון');
+    const loaded=all.slice(1).map((c,i)=>rowToRestaurant(c,i)).filter(r=>r.name.length>0);
+    if(!loaded.length) throw new Error('לא נמצאו שורות תקינות');
+    restaurants=loaded;
+    save();
+    updateLastRefresh();
+    return true;
+  }catch(err){
+    console.error('Sheets error:',err);
+    const cached=JSON.parse(localStorage.getItem('burgeRate_v2')||'[]');
+    if(cached.length){
+      restaurants=cached;
+      showBanner('⚠️ לא הצלחתי לטעון מ-Sheets ('+err.message+'). מציג נתונים שמורים.','warn');
+      return true;
+    }
+    showSheetError('שגיאה: <strong>'+err.message+'</strong><br><small>וודא שה-URL נכון והגיליון מפורסם כ-CSV ציבורי.</small>');
+    return false;
+  }
+}
+
+// =========================================
+// REFRESH BUTTON + AUTO-REFRESH
+// =========================================
+function addRefreshBtn(){
+  if(document.getElementById('refreshBtn')) return;
+  const hdr=document.querySelector('.header-actions');
+  if(!hdr) return;
+  const btn=document.createElement('button');
+  btn.id='refreshBtn';
+  btn.title='רענן נתונים מ-Google Sheets';
+  btn.style.cssText='height:38px;width:38px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.18s;flex-shrink:0';
+  btn.innerHTML='🔄';
+  btn.onmouseenter=()=>btn.style.borderColor='var(--accent)';
+  btn.onmouseleave=()=>btn.style.borderColor='var(--border)';
+  btn.onclick=async()=>{
+    btn.style.animation='spin 0.8s linear';
+    setTimeout(()=>{btn.style.animation='';},900);
+    const ok=await loadFromSheets();
+    if(ok){updateCityOptions();applyFilters();}
+  };
+  hdr.insertBefore(btn,hdr.firstChild);
+
+  // "Last refreshed" label near results count
+  const rc=document.getElementById('resultsCount');
+  if(rc&&!document.getElementById('lastRefresh')){
+    const lbl=document.createElement('span');
+    lbl.id='lastRefresh';
+    lbl.style.cssText='font-size:11px;color:#b0a090';
+    rc.parentElement.appendChild(lbl);
+  }
+}
+
+// =========================================
+// INIT
+// =========================================
+async function init(){
+  addRefreshBtn();
+  const ok=await loadFromSheets();
+  if(ok){updateCityOptions();applyFilters();}
+  if(!window._autoRefreshSet){
+    window._autoRefreshSet=true;
+    setInterval(async()=>{
+      const ok=await loadFromSheets();
+      if(ok){updateCityOptions();applyFilters();}
+    },5*60*1000); // רענון כל 5 דקות
+  }
+}
+
+const _s=document.createElement('style');
+_s.textContent='@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+document.head.appendChild(_s);
+
+init();
+</script>
+</body>
+</html>
