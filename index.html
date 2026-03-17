@@ -24,8 +24,9 @@
     --radius: 18px;
     --radius-sm: 10px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Heebo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; direction: rtl; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: 'Heebo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; direction: rtl; padding-bottom: env(safe-area-inset-bottom); }
 
   /* ===== HEADER ===== */
   header {
@@ -81,8 +82,11 @@
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:22px; padding:16px 28px 48px; }
 
   /* ===== CARD ===== */
-  .card { background:var(--surface); border-radius:var(--radius); border:1.5px solid var(--border); overflow:hidden; cursor:pointer; transition:transform 0.22s cubic-bezier(.34,1.56,.64,1),box-shadow 0.22s,border-color 0.18s; box-shadow:var(--shadow); position:relative; }
-  .card:hover { transform:translateY(-5px) scale(1.01); box-shadow:var(--shadow-lg); border-color:var(--accent); }
+  .card { background:var(--surface); border-radius:var(--radius); border:1.5px solid var(--border); overflow:hidden; cursor:pointer; transition:transform 0.22s cubic-bezier(.34,1.56,.64,1),box-shadow 0.22s,border-color 0.18s; box-shadow:var(--shadow); position:relative; -webkit-user-select:none; user-select:none; }
+  @media (hover:hover) {
+    .card:hover { transform:translateY(-5px) scale(1.01); box-shadow:var(--shadow-lg); border-color:var(--accent); }
+  }
+  .card:active { transform:scale(0.98); opacity:0.92; transition:transform 0.1s,opacity 0.1s; }
   .card.compare-selected { border-color:var(--blue); box-shadow:0 0 0 3px rgba(74,159,212,0.25),var(--shadow); }
   .card.compare-selected:hover { border-color:var(--blue); }
 
@@ -214,14 +218,69 @@
   .empty-state .emoji { font-size:56px; margin-bottom:16px; }
   .empty-state h3 { font-size:20px; font-weight:700; margin-bottom:8px; color:var(--text); }
 
-  @media (max-width:620px) {
-    .modal-sections,.compare-top,.compare-detail-grid,.form-grid { grid-template-columns:1fr; }
-    .grid { grid-template-columns:1fr; padding:12px 14px 40px; }
-    .filters-bar { padding:10px 14px 8px; }
-    header { padding:0 12px; }
-    .logo-text { font-size:20px; }
-    .header-search { max-width:160px; }
+  /* ===== MOBILE ===== */
+  @media (max-width:480px) {
+    /* Header */
+    header { padding:0 10px; gap:8px; height:58px; }
+    .logo-icon { width:36px; height:36px; font-size:18px; border-radius:10px; }
+    .logo-text { font-size:19px; }
+    .header-search { flex:1; min-width:0; max-width:none; }
+    .header-search input { font-size:13px; padding:8px 32px 8px 30px; }
+    .compare-toggle-btn { width:36px; height:36px; padding:0; justify-content:center; }
     .compare-toggle-btn .btn-label { display:none; }
+    .add-btn { width:36px; height:36px; font-size:18px; border-radius:10px; }
+
+    /* Compare hint */
+    .compare-hint { padding:8px 12px; font-size:12px; flex-wrap:wrap; gap:6px; }
+    .compare-go-btn { padding:5px 12px; font-size:12px; }
+
+    /* Filters */
+    .filters-bar { padding:10px 12px 8px; gap:8px; }
+    .filter-label { font-size:12px; }
+    .filter-select { font-size:13px; padding:6px 10px; }
+    .chip { padding:5px 11px; font-size:12px; }
+
+    /* Grid — single column, edge to edge */
+    .grid { grid-template-columns:1fr; padding:10px 10px 56px; gap:14px; }
+
+    /* Cards */
+    .card-img, .card-img-placeholder { height:140px; }
+    .card-body { padding:12px; }
+    .card-name { font-size:16px; }
+    .card-score-badge { font-size:13px; padding:3px 8px; }
+    .rank-badge { font-size:20px; }
+
+    /* Modals — full screen on mobile */
+    .modal-overlay { padding:0; align-items:flex-end; }
+    .modal {
+      max-width:100%;
+      border-radius:var(--radius) var(--radius) 0 0;
+      max-height:92vh;
+    }
+    .modal-hero { height:180px; }
+    .modal-body { padding:24px 16px 20px; }
+    .modal-title { font-size:21px; }
+    .modal-score-big { font-size:30px; }
+    .modal-sections { grid-template-columns:1fr; gap:12px; }
+    .modal-close { top:12px; left:12px; width:30px; height:30px; font-size:16px; }
+
+    /* Compare modal */
+    .compare-top { grid-template-columns:1fr; gap:12px; }
+    .compare-detail-grid { grid-template-columns:1fr; }
+    .compare-modal-header { font-size:17px; padding:16px 16px 12px; }
+    .compare-body { padding:14px 14px 24px; }
+
+    /* Radar chart */
+    .radar-wrap canvas { max-height:200px; }
+    .compare-radar-wrap canvas { max-height:220px; }
+
+    /* Rating bars */
+    .rating-row-label { min-width:80px; font-size:11px; }
+  }
+
+  @media (max-width:360px) {
+    .logo-text { display:none; }
+    .header-search input { font-size:12px; }
   }
 </style>
 </head>
@@ -346,7 +405,7 @@
 // =========================================
 // 1. העתק את כתובת ה-CSV של Google Sheets שלך לכאן:
 //    (File → Share → Publish to web → CSV → Copy link)
-const SHEET_CSV_URL = '';   // ← הכנס את ה-URL כאן
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQgxs_oK4ytYiflovhXKbfdoJxG0lCQLoKnigJy-hQYg8nfzmhF3gFF0zkXqiYRBTlvubcdS12WxZ-/pub?gid=1516836364&single=true&output=csv';
 
 // 3. הכנס כאן את קישור ה-Google Form (לכפתור ה-＋):
 const GOOGLE_FORM_URL = ''; // ← הכנס את קישור ה-Form כאן
